@@ -1,7 +1,8 @@
 var five = require("../lib/johnny-five.js"),
   child = require("child_process"),
   http = require("http"),
-  socket = require("socket.io"),
+  express = require("express"),
+  socket = require("socket.io")(),
   fs = require("fs"),
   app, board, io;
 
@@ -24,12 +25,13 @@ function handler(req, res) {
     res.end(data);
   });
 }
-
-app = http.createServer(handler);
+app = express();
+app.get("*", handler);
+app = http.createServer(app);
 app.listen(8080);
 
 io = socket.listen(app);
-io.set("log level", 1);
+io.origins('*:*')
 
 board = new five.Board();
 
@@ -62,7 +64,7 @@ board.on("ready", function() {
 
   // Servo instance (panning)
   scanner = new five.Servo({
-    pin: 12,
+    pin: 10,
     range: range
   });
 
@@ -88,7 +90,7 @@ board.on("ready", function() {
     // Calculate the next step position
     if (isOver || isUnder) {
       if (isOver) {
-        io.sockets.emit("reset");
+        io.emit("reset");
         degrees = 0;
         step = 1;
         last = -1;
@@ -104,7 +106,7 @@ board.on("ready", function() {
     scanner.to(degrees);
   });
 
-  io.sockets.on("connection", function(socket) {
+  io.on("connection", function(socket) {
     console.log("Socket Connected");
 
     soi = socket;
@@ -112,7 +114,7 @@ board.on("ready", function() {
     ping.on("data", function() {
 
       if (last !== degrees) {
-        io.sockets.emit("ping", {
+        socket.emit("ping", {
           degrees: degrees,
           distance: this.cm
         });

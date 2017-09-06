@@ -47,9 +47,11 @@ board.on("ready", function() {
 
 
   motor = new five.Motor({
+    controller: "PCA9685",
     pins: {
-      pwm: 3,
-      dir: 12
+      pwm: 8,
+      dir: 9,
+      cdir: 10
     }
   });
 
